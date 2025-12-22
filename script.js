@@ -23,7 +23,7 @@ function div(num1,num2){
 // input variables for num1,operator,num2 
 
 let num1=0;
-let num2="";
+let num2=0;
 let opVariable=null;
 
 
@@ -53,6 +53,7 @@ function populate(){
     digits.forEach(digit => {
     digit.addEventListener("click", () => {
         display.value += (digit.textContent);
+
         num2 = Number(display.value);
         
 
@@ -78,4 +79,15 @@ const equals = document.querySelector(".equals");
 equals.addEventListener("click",()=>{
     const result = operate(num1,opVariable,num2);
     display.value = result;
+})
+
+// clear button 
+
+const clear = document.querySelector(".clear");
+clear.addEventListener("click",()=>{
+    num1 = 0;
+    num2= 0;
+    opVariable=null;
+    display.value="";
+
 })
