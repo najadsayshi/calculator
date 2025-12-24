@@ -1,93 +1,152 @@
-
-
-// functions that evaluate add,sub,mul,div
-function add(num1,num2){
-    return num1+num2;
+// ===== Basic math functions =====
+function add(a, b) { return a + b; }
+function sub(a, b) { return a - b; }
+function mul(a, b) { return a * b; }
+function div(a, b) {
+    if (b === 0) return "Nice try. No ÷ by 0 😏";
+    return a / b;
 }
 
-function sub(num1,num2){
-    return num1-num2;
+function operate(a, operator, b) {
+    switch (operator) {
+        case "+": return add(a, b);
+        case "-": return sub(a, b);
+        case "*": return mul(a, b);
+        case "/": return div(a, b);
+        default: return null;
+    }
 }
-function mul(num1,num2){
-    return num1*num2;
+
+function roundResult(num) {
+    return Math.round(num * 100000) / 100000;
 }
-function div(num1,num2){
-    if (num2===0){
-        alert("FUCK YOU MFS,ARE YOU TRYING TO CRASH MY CALCULATOR??");
+
+// ===== State =====
+let num1 = null;
+let operator = null;
+let shouldResetDisplay = false;
+
+// ===== DOM =====
+const display = document.querySelector(".display");
+const digits = document.querySelectorAll(".digit");
+const operators = document.querySelectorAll(".operator");
+const equals = document.querySelector(".equals");
+const clear = document.querySelector(".clear");
+const decimal = document.querySelector(".decimal");
+
+// ===== Digit buttons =====
+digits.forEach(digit => {
+    digit.addEventListener("click", () => {
+        if (shouldResetDisplay) {
+            display.value = "";
+            shouldResetDisplay = false;
+        }
+        display.value += digit.textContent;
+        updateDecimalState();
+    });
+});
+
+// ===== Decimal button =====
+decimal.addEventListener("click", () => {
+    if (shouldResetDisplay) {
+        display.value = "0";
+        shouldResetDisplay = false;
+    }
+
+    const currentNumber = getCurrentNumber();
+    if (currentNumber.includes(".")) return;
+
+    if (display.value === "" || endsWithOperator()) {
+        display.value += "0.";
+    } else {
+        display.value += ".";
+    }
+
+    updateDecimalState();
+});
+
+// ===== Operator buttons =====
+operators.forEach(op => {
+    op.addEventListener("click", () => {
+        if (display.value === "") return;
+
+        if (endsWithOperator()) {
+            // replace operator
+            display.value = display.value.slice(0, -1) + op.textContent;
+            operator = op.textContent;
+            return;
+        }
+
+        if (num1 !== null && operator !== null) {
+            const parts = display.value.split(operator);
+            const num2 = Number(parts[1]);
+
+            let result = operate(num1, operator, num2);
+            if (typeof result === "string") {
+                display.value = result;
+                resetCalculator();
+                return;
+            }
+
+            result = roundResult(result);
+            num1 = result;
+            display.value = result + op.textContent;
+        } else {
+            num1 = Number(display.value);
+            display.value += op.textContent;
+        }
+
+        operator = op.textContent;
+        shouldResetDisplay = false;
+        updateDecimalState();
+    });
+});
+
+// ===== Equals =====
+equals.addEventListener("click", () => {
+    if (!operator || endsWithOperator()) return;
+
+    const parts = display.value.split(operator);
+    const num2 = Number(parts[1]);
+
+    let result = operate(num1, operator, num2);
+    if (typeof result === "string") {
+        display.value = result;
+        resetCalculator();
         return;
     }
-    return num1/num2;
-}
 
-
-// input variables for num1,operator,num2 
-
-let num1=0;
-let num2=0;
-let opVariable=null;
-
-
-// function that operate the calculator
-function operate(num1,operator,num2){
-    if (operator=="+"){
-        return add(num1,num2);
-    }
-    else if(operator=="-"){
-        return sub(num1,num2)
-    }
-    else if(operator=="*"){
-        return mul(num1,num2);
-    }
-    else if(operator=="/"){
-        return div(num1,num2); 
-    }
-}
-
-//function to populate in the display and storing in a variable when a digit button is clicked
-function populate(){
-    const digits = document.querySelectorAll(".digit");
-    const display = document.querySelector(".display");
-
-
-
-    digits.forEach(digit => {
-    digit.addEventListener("click", () => {
-        display.value += (digit.textContent);
-
-        num2 = Number(display.value);
-        
-
-    });
-    });
-}
-
-populate();
-
-const operator = document.querySelectorAll(".operator");
-const display = document.querySelector(".display");
-
-operator.forEach(op =>{
-    op.addEventListener("click",()=>{
-        num1 = num2;
-        opVariable = op.textContent;
-        display.value = "";
-    })
-})
-
-
-const equals = document.querySelector(".equals");
-equals.addEventListener("click",()=>{
-    const result = operate(num1,opVariable,num2);
+    result = roundResult(result);
     display.value = result;
-})
 
-// clear button 
+    num1 = result;
+    operator = null;
+    shouldResetDisplay = true;
+    updateDecimalState();
+});
 
-const clear = document.querySelector(".clear");
-clear.addEventListener("click",()=>{
-    num1 = 0;
-    num2= 0;
-    opVariable=null;
-    display.value="";
+// ===== Clear =====
+clear.addEventListener("click", resetCalculator);
 
-})
+// ===== Helpers =====
+function resetCalculator() {
+    num1 = null;
+    operator = null;
+    display.value = "";
+    shouldResetDisplay = false;
+    updateDecimalState();
+}
+
+function endsWithOperator() {
+    return ["+", "-", "*", "/"].includes(display.value.slice(-1));
+}
+
+function getCurrentNumber() {
+    if (!operator) return display.value;
+    return display.value.split(operator)[1] || "";
+}
+
+function updateDecimalState() {
+    const currentNumber = getCurrentNumber();
+    decimal.disabled = currentNumber.includes(".");
+}
